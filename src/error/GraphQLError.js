@@ -11,6 +11,12 @@ import { type Source } from '../language/source';
 import { type SourceLocation, getLocation } from '../language/location';
 import { printLocation, printSourceLocation } from '../language/printLocation';
 
+const MESSAGE_DETAILS = {
+  'Query root type must be provided.': {
+    code: 'GQ0001'
+  }
+}
+
 /**
  * A GraphQLError describes an Error found during the parse, validate, or
  * execute phases of performing a GraphQL operation. In addition to a message
@@ -26,6 +32,16 @@ export class GraphQLError extends Error {
    * Note: should be treated as readonly, despite invariant usage.
    */
   message: string;
+
+
+  /**
+   * A code describing the Error and referenced in the spec.
+   * 
+   * This code is unique. More details at- 
+   * 
+   * https://spec.graphql.org/June2018/#sec-Errors
+   */
+  code: string;
 
   /**
    * An array of { line, column } locations within the source GraphQL document
@@ -145,6 +161,14 @@ export class GraphQLError extends Error {
         enumerable: true,
         writable: true,
       },
+      code: {
+        value: MESSAGE_DETAILS[message] && MESSAGE_DETAILS[message].code,
+        // By being enumerable, JSON.stringify will include `message` in the
+        // resulting output. This ensures that the simplest possible GraphQL
+        // service adheres to the spec.
+        enumerable: true,
+        writable: true,
+      },
       locations: {
         // Coercing falsy values to undefined ensures they will not be included
         // in JSON.stringify() when not provided.
@@ -224,7 +248,7 @@ export class GraphQLError extends Error {
  * about the error's position in the source.
  */
 export function printError(error: GraphQLError): string {
-  let output = error.message;
+  let output = `${error.code} : ${error.message}`;
 
   if (error.nodes) {
     for (const node of error.nodes) {
